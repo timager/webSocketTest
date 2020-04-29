@@ -3,16 +3,19 @@
 <head>
     <script src="http://code.jquery.com/jquery-1.8.3.js"></script>
     <script>
-        function openWS(){
-            let ws = new WebSocket("ws://0.0.0.0:8000/?user=" + $('#nick').val());
+        const IP = '192.168.0.154'
+        let ws;
+
+        function openWS() {
+            ws = new WebSocket("ws://"+IP+":8000/?user=" + $('#nick').val());
             ws.onmessage = function (evt) {
                 $('#div').html(evt.data);
             };
         }
+
         function sendMessage() {
             let text = $('#textarea').val();
-            let ws = new WebSocket('ws://0.0.0.0:8000?user=' + $('#nick').val());
-            ws.onopen = () => ws.send(text);
+            ws.send(text);
             console.log(text)
         }
 
