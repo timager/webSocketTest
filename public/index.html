@@ -3,21 +3,36 @@
 <head>
     <script src="http://code.jquery.com/jquery-1.8.3.js"></script>
     <script>
+        let users = [];
+        let ws;
         function openWS(){
-            let ws = new WebSocket("ws://0.0.0.0:8000/?user=" + $('#nick').val());
+            ws = new WebSocket("ws://192.168.0.184:8000?user=" + $('#nick').val());
             ws.onmessage = function (evt) {
-                $('#div').html(evt.data);
+                let data = JSON.parse(evt.data);
+                if(data.type === "message"){
+                    $('#div').append("<div style='border: 1px solid red'>author: " + data.author + "<br>message: " + data.data + "</div>");
+                }
+                else{
+                    users = data.data;
+                    $('#select').html("");
+                    users.forEach(item => {
+                        $('#select').append("<option>"+item+"</option>")
+                    });
+                    console.log(users);
+                }
             };
+            $('#input-block').show();
+            $('#nick').attr("disabled", true);
+            $('#connect').attr("disabled", true);
         }
         function sendMessage() {
             let text = $('#textarea').val();
-            let ws = new WebSocket('ws://0.0.0.0:8000?user=' + $('#nick').val());
-            ws.onopen = () => ws.send(text);
+            ws.send(JSON.stringify({"user": $('#select').val(), "text": text}));
             console.log(text)
         }
 
         $(document).ready(function () {
-            $('#textarea').on("input", sendMessage);
+            // $('#textarea').on("input", sendMessage);
         });
     </script>
     <meta charset="UTF-8">
@@ -27,9 +42,14 @@
 <label>Введи никнейм
     <input id="nick"/>
 </label>
-<button onclick="openWS()">connect</button>
-<label>Введи текст
+<button id="connect" onclick="openWS()">connect</button>
+<br>
+<br>
+<br>
+<label id="input-block" style="display: none">Введи текст
     <textarea id="textarea"></textarea>
+    <select id="select"></select>
+    <button onclick="sendMessage()">send</button>
 </label>
 <div id="div"></div>
 </body>

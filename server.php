@@ -22,8 +22,13 @@ $ws_worker->onWorkerStart = function() use (&$connections)
 //    $inner_tcp_worker->listen();
 };
 
-$ws_worker->onMessage = function($connection, $data){
-    echo $data;
+$ws_worker->onMessage = function($connection, $data) use (&$connections){
+    $data = json_decode($data, true);
+    $user = array_search($connection, $connections);
+    $connection2 = $connections[$data['user']];
+    $connection2->send(json_encode(["type"=>"message", "author"=>$user, "data" => $data['text']]));
+    $connection->send(json_encode(["type"=>"message", "author"=>$user, "data" => $data['text']]));
+
 };
 
 $ws_worker->onConnect = function($connection) use (&$connections)
@@ -31,15 +36,23 @@ $ws_worker->onConnect = function($connection) use (&$connections)
     $connection->onWebSocketConnect = function($connection) use (&$connections)
     {
         $connections[$_GET['user']] = $connection;
+        $data = ["type" => "users", "data" => array_keys($connections)];
+        foreach($connections as $connection){
+            $connection->send(json_encode($data));
+        }
     };
 };
-//
-//$ws_worker->onClose = function($connection) use(&$connections)
-//{
-//    // удаляем параметр при отключении пользователя
-//    $user = array_search($connection, $connections);
-//    unset($connections[$user]);
-//};
+
+$ws_worker->onClose = function($connection) use(&$connections)
+{
+    // удаляем параметр при отключении пользователя
+    $user = array_search($connection, $connections);
+    unset($connections[$user]);
+    $data = ["type" => "users", "data" => array_keys($connections)];
+    foreach($connections as $connection){
+        $connection->send(json_encode($data));
+    }
+};
 
 // Run worker
 Worker::runAll();
